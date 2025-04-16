@@ -233,7 +233,7 @@ Next Steps:
 \end{itemize}
 
 In the TESS database, the observations of HAT-P-37 b are blended with the nearby variable star ZTFJ185715.34+511631.4 which is an W Ursae Majoris (EW)-type Eclipsing binary (https://lweb.cfa.harvard.edu/sdu/eclipsingbinaries.html). This was confirmed by Chen et. al 2020 (https://iopscience.iop.org/article/10.3847/1538-4365/ab9cae#apjsab9caes5). 
-Using data from Chen et. al. and the tools in the lightkurve package, we have been able to separate the transit light curves for HAT-P-37 b from the variability of the EB. 
+Using the orbital period from Chen et. al. and the tools in the lightkurve package, we have been able to separate the transit light curves for HAT-P-37 b from the variability of the EB. 
 
 TESS Sector used in this study: 
 \begin{itemize}
@@ -250,7 +250,27 @@ TESS Sector used in this study:
     \item 82
 \end{itemize}
 
-To write a functional form of the eclipsing binary, we considered each sector separately. Using a Box least squares analysis we found that 8 of the 11 sectors show heavy contamination from the EB. For each of these 8, we use the period at max power as determined by the box least squares (as implemented in lightkurve) to determine the period of the EB, then fold the sector to that period. Once folded, the data is binned to 120s for smoothing purposes. Each folded and binned data set is then fit to a fifth order fourier series. Then we fold the data at the transit period and calculate the number of orbits of the EB are expected per sector (ie use the average EB period for each sector and divide by the known orbital period of HAT-P-37 b). We use the fourier series fit repeated to the number of orbits of the EB calculated to then normalize the pdcsap flux from the tess sector. 
+Tess lightcurve fitting process (fit by individual sector):
+\begin{itemize}
+    \item Use box least squares fitting to assess if the sector is contaminated by the EB (see above)
+    \item if the sector is NOT contaminated 
+    \begin{itemize}
+        \item use the Carter model to fit each transit 
+        \item extract a midtime for each transit in the sector
+    \end{itemize}
+    \item if the sector is contaminated
+    \begin{itemize}
+        \item create a known transit mask and apply
+        \item fold the sector to the period of the binary star
+        \item bin the data to the original sector cadence
+        \item interpolate the full w/o transit(currently all code fits folded) time series to the folded/binned data w/o the transit
+        \item normalize the full w/ transit time series to the interpolated series
+        \item chunk the series by the transit orbital period 
+        \item fit each chunk using the carter model
+        \item extract a midtime for each transit in the sector (approx. 10 per sector)
+        
+    \end{itemize}
+\end{itemize}
 
 \subsection{Boise State University Observatory} \label{sec:Barbiescope}
 
