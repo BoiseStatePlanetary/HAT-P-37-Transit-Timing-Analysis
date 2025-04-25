@@ -1,0 +1,66 @@
+Starting April 22... 
+- sucessfully untangled EB signal from transit signal using a Savitzky Golay filter, for all 2024 sectors that showed contamination by EB. 
+- used a Carter model to fit the transit MIDTIME only for each individual lc of a sector after the EB signal has been removed. 
+- all code to do this is in "Conditioning HAT-P-37 Data Final.ipynb" 
+
+Individual Sector notes: 
+Sector 26: 
+    Thursday April 24
+E 1206 - 1212
+extra transit from start of sector to first chunking break... change value of `min_elapsed` to include it
+remove 1208
+removing 1210 and 1207 for now, fit is breaking
+
+Sector 40: 
+    Thursday April 24
+E 1341-1349 
+Note: Epoch 1349 is in this sector AND the observations published in A-thano, results agree.
+Throw out E 1345 because 
+
+Sector 41:
+    Thursday April 24
+E 1351 - 1359
+remove E 1355 no transit present
+
+Sector 53: 
+    Thursday April 24
+E 1469-1474
+Detrending seems to be least effective in this sector
+transit right at the end of sector, had to adjust `max_elapsed`
+remove 1467 & 1468 no transit present
+
+Sector 54:
+    Thursday April 24
+extra transit from start of sector to first chunking break... change value of `min_elapsed` to include it
+remove Epochs 1479 and 1483, chunks do not include transit
+
+Sector 55: 
+    Thursday April 24
+E 1486-1494
+Epoch 1490 - only half transit, breaks code.
+
+Sectors 74:
+    Tuesday April 22
+This sector is not contaiminated by the EB, running only chunking and fitting code to analyze the midtimes. 
+Remember: sectors that are not detrended MUST be normalized before using the Carter Model code
+0, 2, 5, 6
+
+Sector 75: 
+    Tuesday April 22
+0, 1, 6 - No contamination
+
+Sector 80: 
+    Thursday April 24
+E 1730-1738
+If the chunking code has no indices, it doesn't make the chunk.. so this sector already skips the blank spots.. 
+
+Sector 82: 
+    Tuesday April 22
+E 1749-1757
+kick out the first and last chunks because they do not contain a full orbital period
+Note: 4/24 update to code drops first and last chunks
+
+
+Delta BIC Precession: 
+
+    
