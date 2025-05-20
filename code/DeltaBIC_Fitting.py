@@ -157,13 +157,33 @@ def create_susie_obj():
     return unique_src_flgs, all_data_ephemeris_obj
 
 def create_tess_susie_obj():
-    tess_epochs, tess_midtimes, tess_midtime_errs, tess_srcs = read_Tess_data()  
-    timing_obj = TimingData(time_format="jd", epochs=tess_epochs, mid_times=tess_midtimes, 
-                                     mid_time_uncertainties=tess_midtime_errs, time_scale="tdb")  
+    tess_epochs, tess_midtimes, tess_midtime_errs, tess_srcs = read_Tess_data()
+    s745_midtimes, s745_midtime_errs, s745_srcs = read_Sec7475_data()
+
+    rand_all_midtimes = np.concatenate((tess_midtimes, s745_midtimes))
+    rand_all_midtime_errs = np.concatenate((tess_midtime_errs, s745_midtime_errs))
+    rand_all_src_flgs = np.concatenate((tess_srcs, s745_srcs))
+
+    # return ALL SORTED values
+    sort_idx = np.argsort(rand_all_midtimes)
+    all_midtimes = rand_all_midtimes[sort_idx]
+    all_epochs = np.array([get_epochs(tm) for tm in all_midtimes])
+    all_midtime_errs = rand_all_midtime_errs[sort_idx]
+    all_src_flgs = rand_all_src_flgs[sort_idx]
+
+    # delte duplicates, first attempt - keep first value
+    e, u_inds = np.unique(all_epochs, return_index=True)
+    unique_epochs = all_epochs[u_inds]
+    unique_midtimes = all_midtimes[u_inds]
+    unique_errors = all_midtime_errs[u_inds]
+    unique_src_flgs = all_src_flgs[u_inds]
+
+    timing_obj = TimingData(time_format="jd", epochs=unique_epochs, mid_times=unique_midtimes, 
+                                     mid_time_uncertainties=unique_errors, time_scale="tdb")  
                                     #  object_ra=284.2960393, object_dec=51.2691212)
     ephemeris_obj = Ephemeris(timing_obj)
 
-    return tess_srcs, ephemeris_obj
+    return unique_src_flgs, ephemeris_obj
 
 def create_colormap(src_flgs):
     cm = plt.get_cmap('managua')
@@ -210,6 +230,8 @@ def plot_lin_BIC(src_flgs, ephemeris_obj):
 
 
 if __name__ == "__main__":
-    flags, obj = create_susie_obj()
+    flags, obj = create_tess_susie_obj()
     plot_lin_BIC(flags, obj)
+
+    # print(get_epochs(2460313.8743))
 

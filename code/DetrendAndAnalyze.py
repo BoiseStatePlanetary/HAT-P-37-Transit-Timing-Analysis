@@ -1,6 +1,7 @@
 # Converting "Conditioning" notebook to a script for ease of use. building functions to aid and streamline process
 import os
 import csv
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as mplcm
@@ -11,10 +12,12 @@ from astropy.time import Time
 from scipy.stats import median_abs_deviation as mad
 from scipy.optimize import curve_fit
 from transit_utils import *
+from utils import *
 
 
-plt.rcParams.update({'font.size': 22}) # Sets global plot font size to 22
-plt.rcParams.update({'legend.fontsize':20}) # sets global legend font size to 20
+plt.rcParams.update({'font.size': 14}) # Sets global plot font size to 22
+plt.rcParams.update({'legend.fontsize': 12}) # sets global legend font size to 20
+plt.rcParams['figure.constrained_layout.use'] = True
 tess_zero_time = 2457000.
 main_dir = os.path.dirname(os.path.dirname(__file__))
 fig_dir = os.path.join(main_dir, "figures")
@@ -29,6 +32,9 @@ def download_tess_sectors(planet="TIC 267572272"):
 
 # clean sectors - use sigma clipped PDCSAP flux
 def clean_sectors(lc_collection, savefig=False):
+    if savefig:
+        fig = plt.figure(figsize=(17, 22), layout="constrained")
+    
     cleaned_lcs = []
     for i, lc in enumerate(lc_collection):
         no_nans_lc = lc.remove_nans()
@@ -37,25 +43,20 @@ def clean_sectors(lc_collection, savefig=False):
         cleaned_lcs.append(clipped_lc)
 
         if savefig:
-            fig, axs = plt.subplots(4, 3, figsize=(15, 20), sharey="all") # create a figure with 4 rows and 3 columns to slot the tess lightcurves into
-            ax_indices = [(0, 0), (0, 1), (0, 2), 
-                        (1, 0), (1, 1), (1, 2), 
-                        (2, 0), (2, 1), (2, 2), 
-                        (3, 0), (3, 1), (3, 2)]
-            clipped_lc.scatter(column='pdcsap_flux', label='PDCSAP Flux', normalize=True, ax=axs[ax_indices[i]])
-            axs[ax_indices[i]].set_title(f"TESS Sector {lc.sector}")
-            if i == 0:
-                axs[ax_indices[i]].legend()  # keep the legend in the first plot
-            else:
-                axs[ax_indices[i]].get_legend().remove()  # Suppress the legend because it clutters up the plot.
+            ax = fig.add_subplot(4, 3, i+1)
+            clipped_lc.scatter(column='pdcsap_flux', label='PDCSAP Flux', normalize=True, ax=ax)
+            ax.set_title(f"TESS Sector {lc.sector}")
+            ax.get_legend().remove()
         
     if savefig:
-        fig.savefig("../figures/allSectors_sigma5_PDCSAPflux_lc.png", dpi=300, bbox_inches="tight")
+        fig_name = os.path.join(fig_dir, "allSectors_sigma5_PDCSAPflux_lc.png")
+        fig.savefig(fig_name, dpi=300, bbox_inches="tight")
+        print(f"Figure saved to {fig_name}")
 
     return cleaned_lcs
 
 def calc_BLS_period(light_curve, savefig=False):
-    # Use the PDCSAP to calculate the LS for each sector of TESS data and plot
+    # Use the PDCSAP to calculate the Box-Least Squares periodogram (fit to box ie Transit shapes) for each sector of TESS data and plot
     pg = light_curve.to_periodogram(method="bls")
     
     if savefig: 
@@ -83,7 +84,7 @@ def mask_hatp37_transits(light_curve, plot_data=False):
     '''returns lightkurve object of a full sector without the transits, sector_lk MUST be a lightkurve LightCurve obj'''
     known_transit_mask = light_curve.create_transit_mask(transit_time=planet_epoch_0_BTJD, 
                                                          period=orbital_period,
-                                                         duration=0.1)
+                                                         duration=0.194) # duration (in days) == 2*transit duration (2.33 h ~ 0.097d)
     # NOTE: create transit mask returns an array with True for every data point IN TRANSIT, so we need to flip it to remove the transits
     no_transit_mask = known_transit_mask == False  # this inverts the mask to mask out ONLY the transits
     NO_transits_lk = light_curve[no_transit_mask]
@@ -121,7 +122,6 @@ def bin_lightcurve(light_curve, binsize=120./86400.):  # 120 seconds to days
     astropy_time = Time(binned_time, format=light_curve.time.format)
     binned_lightcurve = lk.LightCurve(time=astropy_time, flux=binned_flux, flux_err=binned_err, meta=light_curve.meta)
     return binned_lightcurve
-
 
 def fold_lightcurve(light_curve, period, ref_mid, output_rel_times=False):
     # return a lightkurve object with the time folded
@@ -189,7 +189,6 @@ def detrend_by_flatten(sector_lc):
 
     detrended_lc = lk.LightCurve(time=sector_lc.time, flux=detrended_flux, flux_err=sector_lc.flux_err, meta=sector_lc.meta)
     return detrended_lc
-
 
 def calc_sector_chunks(sector_lc, orbital_period, ref_mid):
     ## Note, we want the UNFOLDED time here
@@ -275,8 +274,31 @@ def fit_transit_midtime(lc, transit_shape_params):
 
     return fit_midtime, fit_err[0]
 
+def plot_LS_by_sector(sector_list):
+    # REMEMBER: figsize takes width by height!!
+    fig = plt.figure(figsize=(17, 11), layout="constrained")  # (w:h) 3:2 aspect ratio to create full page figure, 1.5455:1 for half page
+    behaved_sector_list = []
+    for lc in sector_list:
+        if lc.sector in [59, 74, 75]:
+            pass
+        else:
+            behaved_sector_list.append(lc)
+    print(behaved_sector_list)
+
+    for i, lc in enumerate(behaved_sector_list):
+        pg = lc.to_periodogram(oversample_factor=10)
+        ax = fig.add_subplot(2, 4, i+1)
+        pg.plot(ax=ax, view="period", scale="log", label=f"Peak = {pg.period_at_max_power:.4f}")
+        ax.set_title(f"Sector {lc.sector}") 
+
+    figname = os.path.join(fig_dir, "wellbehaved_sectors_LS_periodogram.png")
+    plt.savefig(figname, dpi=300) #, bbox_inches="tight")
+    print(f"Saved figure to {figname}")
+        
+
+
 def plot_sectors_folded_by_EB(sector_list):
-    fig = plt.figure(figsize=(16,9))
+    fig = plt.figure(figsize=(8.5, 5.5))
     ax = fig.add_subplot(111)
 
     #establish colors for the plot
@@ -295,24 +317,30 @@ def plot_sectors_folded_by_EB(sector_list):
     EB_t0_BTJD = EB_t0_BJD - tess_zero_time
 
     bin_fold_list = []
+    sectors = []
     for lc in sector_list:
         folded_lc = fold_lightcurve(lc, period=EB_period, ref_mid=EB_t0_BTJD, output_rel_times=True)
         bin_fold_lc = bin_lightcurve(folded_lc)
         bin_fold_list.append(bin_fold_lc)
+        sectors.append(lc.sector)
 
 
-    # sort the light curve sectors by their minimu flux to make the plot easier to see
+    # sort the light curve sectors by their minimum flux to make the plot easier to see
     sector_mins = [np.min(x.flux.value) for x in bin_fold_list]
     sort_idx = np.argsort(sector_mins)
+    num_idx = np.argsort(sectors)
 
-    for i in sort_idx:
+
+    for i in num_idx:
         lc = bin_fold_list[i]
-        lc.plot(ax=ax, label=f"Sector {lc.sector}", normalize=True, linewidth=3.0)
+        lc.plot(ax=ax, label=f"Sector {lc.sector}", normalize=True, linewidth=3.0, zorder=sort_idx[i])
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])  # shrink axis by 20%
+    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
     
     figname = os.path.join(fig_dir, "all_sectors_folded_EB_period.png")
     plt.savefig(figname, dpi=300, bbox_inches="tight")
     print(f"Saved figure to {figname}")
-
 
 def detrend_and_fit_sector(sector_lc):
     # From A-thano et. al. (https://ui.adsabs.harvard.edu/abs/2023ApJS..265....4K/abstract)
@@ -369,9 +397,37 @@ def detrend_and_fit_multiple_sectors(lc_collection, sector_list):
     
     return csv_name      
 
+def plot_wang_vs_huchmala_sec_59():
+    code_dir = os.path.dirname(__file__)
+    wang_data_file = os.path.join(code_dir, "Wang2024_Table1_hatp37b.csv")
+    huchmala_data_file = os.path.join(code_dir, "Huchmala_Sector59_fits.csv")
+
+    w_data = pd.read_csv(wang_data_file, comment='#', header=0)
+    w_epochs = np.array(w_data["Epoch"].astype('int'))
+    w_mid_times = np.array(w_data["Tm"])
+    w_mid_times_errs = np.array(w_data["sigma_Tm"])
+
+    r_data = pd.read_csv(huchmala_data_file, comment='#', header=0)
+    r_epochs = np.array(r_data["Epoch"].astype('int'))
+    r_mid_times = np.array(r_data["Tm"])
+    r_mid_times_errs = np.array(r_data["sigma_Tm"])
+
+    #create linear o-c plot
+    #C = T0 +E(orbital_period)
+
+    fig = plt.figure(figsize=(8.5, 5.5))
+    ax = fig.add_subplot(111)
+    ax.errorbar(w_epochs, w_mid_times, w_mid_times_errs, ls='', marker='o', elinewidth=1.0, label="Wang et. al. 2024", color=BoiseState_blue)
+    ax.errorbar(r_epochs, r_mid_times, r_mid_times_errs, ls='', marker='o', elinewidth=1.0, label="This work", color=BoiseState_orange)
+
+    figname = os.path.join(fig_dir, "Wang_vs_Huchmala_Sec59.png")
+    plt.savefig(figname, dpi=300, bbox_inches="tight")
+    print(f"Saved figure to {figname}")
+         
+
 if __name__ == '__main__':
     tess_lc_collection = download_tess_sectors()
-    cleaned_collection = clean_sectors(tess_lc_collection)
+    cleaned_collection = clean_sectors(tess_lc_collection, savefig=True)
     # 0: <TessLightCurve LABEL="TIC 267572272" SECTOR=26 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
     # 1: <TessLightCurve LABEL="TIC 267572272" SECTOR=40 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
     # 2: <TessLightCurve LABEL="TIC 267572272" SECTOR=41 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
@@ -384,5 +440,9 @@ if __name__ == '__main__':
     # 9: <TessLightCurve LABEL="TIC 267572272" SECTOR=80 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
     # 10: <TessLightCurve LABEL="TIC 267572272" SECTOR=82 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
 
-    con_secs = [26., 40., 41., 53., 54., 55., 59., 80., 82.] # Elisabeth has 74 & 75!!
-    detrend_and_fit_multiple_sectors(cleaned_collection, con_secs)
+    # plot_LS_by_sector(cleaned_collection)
+    # plot_sectors_folded_by_EB(cleaned_collection)
+
+    # con_secs = [26., 40., 41., 53., 54., 55., 59., 80., 82.] # Elisabeth has 74 & 75!!
+    # detrend_and_fit_multiple_sectors(cleaned_collection, con_secs)
+    # plot_wang_vs_huchmala_sec_59()
