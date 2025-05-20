@@ -105,6 +105,10 @@
 %% where dimension is any recognized LaTeX dimension, e.g. pt, in, etc.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
+
+%% packages added by RMH
+\usepackage{float}
+
 %% Use this command to indicate a subdirectory where figures are located.
 %%\graphicspath{{./}{figures/}}
 %% This is the end of the preamble.  Indicate the beginning of the
@@ -218,88 +222,35 @@ HAT-P-37 b is a Hot Jupiter with an approximate 2.8 day period around a 0.9 sola
 %% automatically renumber them.
 
 \section{Introduction} 
-
+\input{introduction}
 
 \section{Data} \label{sec:data}
 
 \subsection{TESS database} \label{sec:tessData}
-Next Steps: 
-\begin{itemize}
-    \item Add TESS frame showing HAT-P-37 and EB
-    \item Add frames showing pixels used for the apertures
-    \item remove insturment noise
-    \item Lomb-Scargle of EB
-    \item light curve before and after EB flattening
-\end{itemize}
+\input{TessData}
 
-In the TESS database, the observations of HAT-P-37 b are blended with the nearby variable star ZTFJ185715.34+511631.4 which is an W Ursae Majoris (EW)-type Eclipsing binary (https://lweb.cfa.harvard.edu/sdu/eclipsingbinaries.html). This was confirmed by Chen et. al 2020 (https://iopscience.iop.org/article/10.3847/1538-4365/ab9cae#apjsab9caes5). 
-Using the orbital period from Chen et. al. and the tools in the lightkurve package, we have been able to separate the transit light curves for HAT-P-37 b from the variability of the EB. 
-
-TESS Sector used in this study: 
-\begin{itemize}
-    \item 26
-    \item 40
-    \item 41
-    \item 53
-    \item 54
-    \item 55
-    \item 59 - large dip approx. 12 day period, masked in PDCSAP flux, but probably need to look into what it is
-    \item 74 - no contamination with EB - fit fine as it
-    \item 75 - no contamination with EB - fit fine as it
-    \item 80
-    \item 82
-\end{itemize}
-
-Tess lightcurve fitting process (fit by individual sector):
-\begin{itemize}
-    \item Use box least squares fitting to assess if the sector is contaminated by the EB (see above)
-    \item if the sector is NOT contaminated 
-    \begin{itemize}
-        \item use the Carter model to fit each transit 
-        \item extract a midtime for each transit in the sector
-    \end{itemize}
-    \item if the sector is contaminated
-    \begin{itemize}
-        \item create a known transit mask and apply
-        \item fold the sector to the period of the binary star
-        \item bin the data to the original sector cadence
-        \item interpolate the full w/o transit(currently all code fits folded) time series to the folded/binned data w/o the transit
-        \item normalize the full w/ transit time series to the interpolated series
-        \item chunk the series by the transit orbital period 
-        \item fit each chunk using the carter model
-        \item extract a midtime for each transit in the sector (approx. 10 per sector)
-        
-    \end{itemize}
-\end{itemize}
-
-\subsection{Boise State University Observatory} \label{sec:Barbiescope}
-
-\subsection{Citizen Science Programs} \label{sec:CitSci}
+\input{OtherData}
 
 \section{Analysis} \label{sec:analysis}
 
 \section{Discussion \& Conclusions} \label{sec:conc}
 
-%% For this sample we use BibTeX plus aasjournalv7.bst to generate the
-%% the bibliography. The sample7.bib file was populated from ADS. To
-%% get the citations to show in the compiled file do the following:
-%%
-%% pdflatex sample7.tex
-%% bibtext sample7
-%% pdflatex sample7.tex
-%% pdflatex sample7.tex
+\include{fitted_transit_figures}
+
+\begin{acknowledgments}
+BJ, AK, DC, ERA, AS, and JPM were supported by a grant from the NASA Exoplanets Research Program, award number 80NSSC22K0317. MB was supported by the Idaho Space Grant Consortium. RMH was supported by the NASA Science Activation Program, award number 80NSSC22M0008. The authors acknowledge useful input from Rory Barnes and Eric Agol.
+\end{acknowledgments}
+
+\software{lightkurve \citep{lightkurve:2018}, astropy \citep{astropy:2013, astropy:2018, astropy:2022},
+astroquery, tesscut, matplotlib \citep{Hunter:2007}, numpy \citep{harris2020array}, scipy \citep{2020SciPy-NMeth}}
+
+\appendix
+
+\section{Appendix}
 
 \bibliography{sample7}{}
 \bibliographystyle{aasjournalv7}
 
-%% This command is needed to show the entire author+affiliation list when
-%% the collaboration and author truncation commands are used.  It has to
-%% go at the end of the manuscript.
-%\allauthors
-
-%% Include this line if you are using the \added, \replaced, \deleted
-%% commands to see a summary list of all changes at the end of the article.
-%\listofchanges
 
 \end{document}
 
