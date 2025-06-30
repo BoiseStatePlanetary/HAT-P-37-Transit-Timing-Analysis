@@ -166,9 +166,17 @@ def detrend_by_EB(sector_lc, use_lit_time=True):
 
     # detrend by dividing the WHOLE sector flux by the interpolated
     detrended_flux = sector_lc.flux.value / interp_trend
-    detrended_err = sector_lc.flux_err.value / np.median(interp_trend)
+    detrended_err = sector_lc.flux_err.value / mad(detrended_flux)
     
     detrended_lc = lk.LightCurve(time=sector_lc.time, flux=detrended_flux, flux_err=detrended_err, meta=sector_lc.meta)
+    
+    fig = plt.figure(figsize=(8.5, 5.5))
+    ax = fig.add_subplot(111)
+    sector_lc.scatter(normalize=True, label="PDCSAP Flux", color="gray", ax=ax)
+    detrended_lc.scatter(label="Detrended Flux", color=BoiseState_orange, ax=ax)
+    fig_name = os.path.join(fig_dir, f"FullSector_{sector_lc.sector}_detrended.png")
+    fig.savefig(fig_name, dpi=300, bbox_inches="tight")
+    
     return binary_period, detrended_lc, interp_trend
 
 def detrend_by_flatten(sector_lc):
@@ -295,8 +303,6 @@ def plot_LS_by_sector(sector_list):
     plt.savefig(figname, dpi=300) #, bbox_inches="tight")
     print(f"Saved figure to {figname}")
         
-
-
 def plot_sectors_folded_by_EB(sector_list):
     fig = plt.figure(figsize=(8.5, 5.5))
     ax = fig.add_subplot(111)
@@ -343,6 +349,7 @@ def plot_sectors_folded_by_EB(sector_list):
     print(f"Saved figure to {figname}")
 
 def detrend_and_fit_sector(sector_lc):
+    fig = plt.figure(figsize=(17, 11), layout="constrained")
     # From A-thano et. al. (https://ui.adsabs.harvard.edu/abs/2023ApJS..265....4K/abstract)
     # Table 7 - constant-period model
     orbital_period = 2.797440 #±0.000001 
@@ -370,6 +377,14 @@ def detrend_and_fit_sector(sector_lc):
         print(f"Fitted Epoch {sector_epochs[i]}: Midtime = {fit_tc[0] + tess_zero_time}, {fit_tc_err[0]}")
         sector_midtimes.append(fit_tc[0] + tess_zero_time)
         sector_midtime_errs.append((fit_tc_err[0]*1000))
+        ax = fig.add_subplot(3, 3, i+1)
+        lc.scatter(ax=ax, label="Detrended Data", color="gray")
+        ax.plot(lc.time.value, Carter_model(lc.time.value, fit_tc[0], *shape_params), linewidth=2.0, label="Carter Model Best Fit")
+        ax.set_title(f"Epoch {sector_epochs[i]}")
+    
+    figname = os.path.join(fig_dir, f"BestFitCurves_Sector{sector_lc.sector}.png")
+    plt.savefig(figname, dpi=300) #, bbox_inches="tight")
+    print(f"Saved figure to {figname}")
     
     return sector_epochs, sector_midtimes, sector_midtime_errs
 
@@ -427,7 +442,7 @@ def plot_wang_vs_huchmala_sec_59():
 
 if __name__ == '__main__':
     tess_lc_collection = download_tess_sectors()
-    cleaned_collection = clean_sectors(tess_lc_collection, savefig=True)
+    cleaned_collection = clean_sectors(tess_lc_collection)
     # 0: <TessLightCurve LABEL="TIC 267572272" SECTOR=26 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
     # 1: <TessLightCurve LABEL="TIC 267572272" SECTOR=40 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
     # 2: <TessLightCurve LABEL="TIC 267572272" SECTOR=41 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
@@ -440,8 +455,7 @@ if __name__ == '__main__':
     # 9: <TessLightCurve LABEL="TIC 267572272" SECTOR=80 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
     # 10: <TessLightCurve LABEL="TIC 267572272" SECTOR=82 AUTHOR=SPOC FLUX_ORIGIN=pdcsap_flux>
 
-    # plot_LS_by_sector(cleaned_collection)
-    # plot_sectors_folded_by_EB(cleaned_collection)
+    detrend_by_EB(cleaned_collection[1])
 
     # con_secs = [26., 40., 41., 53., 54., 55., 59., 80., 82.] # Elisabeth has 74 & 75!!
     # detrend_and_fit_multiple_sectors(cleaned_collection, con_secs)

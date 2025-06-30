@@ -6,29 +6,29 @@ BoiseState_blue = "#0033A0"
 BoiseState_orange = "#D64309"
 aspect_ratio = 16./9.
 
-# This is the REAL DATA for WASP-12 b pulled from Yee et al.
-url = "https://raw.githubusercontent.com/BoiseStatePlanetary/susie/refs/heads/main/example_data/wasp12b_tra_occ.csv"
-data = pd.read_csv(url)
-tra_or_occs = np.array(data["tra_or_occ"])
-epochs = np.array(data["epoch"].astype('int'))
-mid_times = np.array(data["mid_time"])
-mid_time_errs = np.array(data["mid_time_err"])
+# # This is the REAL DATA for WASP-12 b pulled from Yee et al.
+# url = "https://raw.githubusercontent.com/BoiseStatePlanetary/susie/refs/heads/main/example_data/wasp12b_tra_occ.csv"
+# data = pd.read_csv(url)
+# tra_or_occs = np.array(data["tra_or_occ"])
+# epochs = np.array(data["epoch"].astype('int'))
+# mid_times = np.array(data["mid_time"])
+# mid_time_errs = np.array(data["mid_time_err"])
 
-sigma = np.median(mid_time_errs)
+# sigma = np.median(mid_time_errs)
 
-# Taken from Yee+ (2020)
-T0_precession = 2456305.45488
-Ps_precession = 1.091419633
-e = 0.00310
-omega_0 = 2.62 # radians
-domega_dE = 0.000984 # rad per orbit
-Pa = Ps_precession*(1. - domega_dE/2./np.pi)
+# # Taken from Yee+ (2020)
+# T0_precession = 2456305.45488
+# Ps_precession = 1.091419633
+# e = 0.00310
+# omega_0 = 2.62 # radians
+# domega_dE = 0.000984 # rad per orbit
+# Pa = Ps_precession*(1. - domega_dE/2./np.pi)
 
-# WASP12b_scaling_factor = e*Pa/np.pi/sigma
+# # WASP12b_scaling_factor = e*Pa/np.pi/sigma
 
-T0_decay = 2456305.455809
-Ps_decay = 1.091420107
-dPdE_decay = -10.04e-10
+# T0_decay = 2456305.455809
+# Ps_decay = 1.091420107
+# dPdE_decay = -10.04e-10
 
 # 2025 Feb 20 - Just as a check, I want to see how different the eccentricity metric would be if I only include part of the dataset.
 
@@ -45,15 +45,15 @@ dPdE_decay = -10.04e-10
 #sigma_occ = mid_time_errs[ind][tra_or_occs[ind] == "occ"]
 #tra_or_occs = tra_or_occs[ind]
 
-E = epochs
-E_tra = E[tra_or_occs == "tra"]
-E_occ = E[tra_or_occs == "occ"]
-t = mid_times
-ttra = mid_times[tra_or_occs == "tra"]
-tocc = mid_times[tra_or_occs == "occ"]
-sigma = mid_time_errs
-sigma_tra = mid_time_errs[tra_or_occs == "tra"]
-sigma_occ = mid_time_errs[tra_or_occs == "occ"]
+# E = epochs
+# E_tra = E[tra_or_occs == "tra"]
+# E_occ = E[tra_or_occs == "occ"]
+# t = mid_times
+# ttra = mid_times[tra_or_occs == "tra"]
+# tocc = mid_times[tra_or_occs == "occ"]
+# sigma = mid_time_errs
+# sigma_tra = mid_time_errs[tra_or_occs == "tra"]
+# sigma_occ = mid_time_errs[tra_or_occs == "occ"]
 
 def calc_omega(E, omega_0, domega_dE):
     return omega_0 + domega_dE*E
@@ -235,14 +235,50 @@ def calc_P(x, y, sigma):
 def calc_analytic_chisq(E, sigma, dPdE):
     Delta_P_prime = calc_P_correction(E, sigma)
     Delta_T0_prime = calc_T0_correction(E, sigma)
-    Sxxxx = calc_Sxxxx(E, sigma)
-    Sxx = calc_Sxx(E, sigma)
-    S = calc_S(E, sigma)
-    Sxxx = calc_Sxxx(E, sigma)
-    Sx = calc_Sx(E, sigma)
+    # Sxxxx = calc_Sxxxx(E, sigma)
+    # Sxx = calc_Sxx(E, sigma)
+    # S = calc_S(E, sigma)
+    # Sxxx = calc_Sxxx(E, sigma)
+    # Sx = calc_Sx(E, sigma)
         
     chi_sq = 0.25*dPdE**2*np.sum(((E**2 -\
             Delta_P_prime*E - Delta_T0_prime)/sigma)**2) + (len(E) - 2.)
     return chi_sq
 
+# copy-pasta from fit_lin_model_to_prec_ephemeris.py
+def calc_Delta(x, sigma):
+    S = calc_S(x, sigma)
+    Sx = calc_Sx(x, sigma)
+    Sxx = calc_Sxx(x, sigma)
 
+    term1 = Sxx*S
+    term2 = -Sx*Sx
+
+    return term1 + term2
+
+def calc_T0_lin_factor(x, cosw, sigma):
+    Delta = calc_Delta(x, sigma)
+
+    Sx = calc_Sx(x, sigma)
+    Sxx = calc_Sxx(x, sigma)
+    Sxxx = calc_Sxxx(x, sigma)
+
+    Scosw = calc_Scosw(x, cosw, sigma)
+    Sxcosw = calc_Sxcosw(x, cosw, sigma)
+
+    term1 = Sx*Sxcosw - Sxx*Scosw
+
+    return term1/Delta
+
+def calc_Ps_lin_factor(x, cosw, sigma):
+    Delta = calc_Delta(x, sigma)
+
+    S = calc_S(x, sigma)
+    Sx = calc_Sx(x, sigma)
+
+    Scosw = calc_Scosw(x, cosw, sigma)
+    Sxcosw = calc_Sxcosw(x, cosw, sigma)
+
+    term1 = Sx*Scosw - S*Sxcosw
+    
+    return term1/Delta
