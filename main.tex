@@ -76,6 +76,19 @@
 \newcommand{\vdag}{(v)^\dagger}
 \newcommand\aastex{AAS\TeX}
 \newcommand\latex{La\TeX}
+% RMH commands
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FOR PUBLISHING UNCOMMENT THIS LINE
+% \newcommand{\TEMP}[1]{}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FOR WRITING UNCOMMENT THIS LINE
+\newcommand{\TEMP}[1]{#1}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\COM}[1]{\TEMP{\textbf{\textcolor{red}{COMMENT}}: \textit{#1}}}
+\newcommand{\REMOVED}[1]{\TEMP{\textit{\textcolor{gray}{#1}}}}
+\newcommand{\ADDED}[1]{\TEMP{\textcolor{red}{#1}}}
+% RMH variables
+\newcommand{\DeltaBIC}[0]{$\Delta\mathrm{BIC}$}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %% The following section outlines numerous optional output that
@@ -116,88 +129,16 @@
 
 \begin{document}
 
-\title{Searching for Non-Keplerian Orbital Motion in the HAT-P-37 Hot Jupiter System}
+\title{Searching for Non-Keplerian Orbital Motion in the HAT-P-37 Hot Jupiter System with the Help of Transit Observations by Small Telescopes}
 
-%% A significant change from AASTeX v6+ is in the author blocks. Now an email
-%% address is required for each author. This means that each author requires
-%% at least one of the following:
-%%
-%% \author
-%% \affiliation
-%% \email
-%%
-%% If these three commands are not available for each author, the latex
-%% compiler will issue an error and if you force the latex compiler to continue,
-%% it will generate an incomplete pdf.
-%%
-%% Multiple \affiliation commands are allowed and authors can also include
-%% an optional \altaffiliation to indicate a status, i.e. Hubble Fellow. 
-%% while affiliations are indexed as footnotes, altaffiliations are noted with
-%% with a non-numeric footnote that is set away from the numeric \affiliation 
-%% footnotes. NOTE that if an \altaffiliation command is used it must 
-%% come BEFORE the \affiliation call, right after the \author command, in 
-%% order to place the footnotes in the proper location. Because non-numeric
-%% symbols are used, \altaffiliation should be used sparingly.
-%%
-%% In v7 the \author command takes an optional argument which provides 
-%% additional metadata about the author. Authors can provide the 16 digit 
-%% ORCID, the surname (family or last) name, the given (first or fore-) name, 
-%% and a name suffix, e.g. "Jr.". The syntax is:
-%%
-%% \author[orcid=0000-0002-9072-1121,gname=Gregory,sname=Schwarz]{Greg Schwarz}
-%%
-%% This name metadata in not shown, it is only for parsing by the peer review
-%% system so authors can be more easily identified. This name information will
-%% also be sent to the publisher so they can include it in the CROSSREF 
-%% metadata. Including an orcid will hyperlink the author name to the 
-%% author's ORCID page. Note that  during compilation, LaTeX will do some 
-%% limited checking of the format of the ID to make sure it is valid. If 
-%% the "orcid-ID.png" image file is  present or in the LaTeX pathway, the 
-%% ORCID icon will appear next to the authors name.
-%%
-%% Even though emails are now required for each author, the \email does not
-%% produce output in the compiled manuscript unless the optional "show" command
-%% is used. For example,
-%%
-%% \email[show]{greg.schwarz@aas.org}
-%%
-%% All "shown" emails are show in the bottom left of the first page. Due to
-%% space constraints, only a few emails should be shown. 
-%%
-%% To identify a corresponding author, use the \correspondingauthor command.
-%% The command appends "Corresponding Author: " to the argument it appears at
-%% the bottom left of the first page like the output from \email. 
-\author[0000-0002-3548-1655]{Rachel M.~Huchmala}
-\affiliation{Department of Physics, Boise State University, 1910 University Drive, Boise ID 83725-1570 USA}
-\email{rachelhuchmala@boisestate.edu}
-
-\author[0000-0002-9495-9700]{Brian Jackson}
-\affiliation{Department of Physics, Boise State University, 1910 University Drive, Boise ID 83725-1570 USA}
-\affiliation{Carl Sagan Center, SETI Institute, Mountain View, CA, United States}
-\email{bjackson@boisestate.edu}
-
-\author[0000-0002-9131-5969]{Elisabeth R.~Adams}
-\affiliation{Planetary Science Institute, 1700 E. Ft. Lowell, Suite 106, Tucson, AZ 85719, USA}
-\email{adams@psi.edu}
-
-\author[0000-0002-9495-9700]{Malia Barker}
-\affiliation{Department of Physics, Boise State University, 1910 University Drive, Boise ID 83725-1570 USA}
-\affiliation{Department of Computer Science, Boise State University, 1910 University Drive, Boise ID 83725-1570 USA}
-\email{maliabarker@u.boisestate.edu}
-
-\author[0000-0003-3716-3455]{Jeffrey P.~Morgenthaler}
-\email{morgenthaler@psi.edu}
-\affiliation{Planetary Science Institute, 1700 E. Ft. Lowell, Suite 106, Tucson, AZ 85719, USA}
-
-\author[0000-0002-9468-7477]{Amanda A.~Sickafoose}
-\email{sickafoose@psi.edu}
-\affiliation{Planetary Science Institute, 1700 E. Ft. Lowell, Suite 106, Tucson, AZ 85719, USA}
+%% Due to the length of the author list, it is corralled into it's own tex file. 
+\input{author_list.tex}
 
 
 %% Mark off the abstract in the ``abstract'' environment. 
 \begin{abstract}
 
-HAT-P-37 b is a Hot Jupiter with an approximate 2.8 day period around a 0.9 solar mass G-type star. Recent studies of HAT-P-37 b have shown it exhibits transit timing variations (TTVs) most recently compared to a precession model (probably cite?). In this work, we present X transit observations from TESS, the on-campus observatory at Boise State University, and from amateur astronomers to increase the observational baseline of HAT-P-37 b in an effort to distinguish the cause of the transit timing variation. 
+HAT-P-37 b is a Hot Jupiter with an approximate 2.8 day period around a 0.9 solar mass G-type star. Recent studies of HAT-P-37 b have shown it exhibits transit timing variations (TTVs) most recently compared to a precession model. In this work, we present a total of X new midtimes for HAT-P-37 b. These results are a combination of transit observations from TESS, the on-campus observatory at Boise State University, \COM{ASU transits,} and from amateur astronomers \COM{only Unistellar?} to increase the observational baseline of HAT-P-37 b in an effort to distinguish the cause of the transit timing variation. \COM{Potentially add the \DeltaBIC ??}
 
 \end{abstract}
 
@@ -221,24 +162,41 @@ HAT-P-37 b is a Hot Jupiter with an approximate 2.8 day period around a 0.9 sola
 %% That way, if you change the order of any elements, LaTeX will
 %% automatically renumber them.
 
-\section{Introduction} 
+\section{Introduction} \label{sec:Intro}
 \input{introduction}
 
 \section{Data} \label{sec:data}
 
 \subsection{TESS database} \label{sec:tessData}
+\COM{58 midtimes - new analysis, 19 midtimes - Elisabeth (S74/75), 8 midtimes - Wang (S59)}
 \input{TessData}
 
-\input{OtherData}
+\subsection{Boise State University} \label{sec:BSU}
+\subsubsection{SuPerPiG Observing Grid}
+\COM{6? midtimes}
+
+\subsubsection{Campus Observatory}
+\COM{? midtimes}
+
+\subsubsection{Bruneau Dunes State Park}
+\COM{1 midtime}
+
+\subsection{Arizona State University Program} \label{sec:ASU}
+\COM{13 midtimes}
+\COM{Heather/Fred please describe your observation/analysis methods here}
+
+\subsection{Unistellar Citizen Science Program} \label{sec:CitSci}
+\COM{? midtimes}
+\COM{Lauren please describe your observation/analysis methods here}
 
 \section{Analysis} \label{sec:analysis}
 
 \section{Discussion \& Conclusions} \label{sec:conc}
 
-\include{fitted_transit_figures}
+% \include{fitted_transit_figures}
 
 \begin{acknowledgments}
-BJ, AK, DC, ERA, AS, and JPM were supported by a grant from the NASA Exoplanets Research Program, award number 80NSSC22K0317. MB was supported by the Idaho Space Grant Consortium. RMH was supported by the NASA Science Activation Program, award number 80NSSC22M0008. The authors acknowledge useful input from Rory Barnes and Eric Agol.
+RMH was supported by the NASA Citizen Science Seed Funding Program, award number XX and the NASA Science Activation Program, award number 80NSSC22M0008. BJ, AK, DC, ERA, AS, and JPM were supported by a grant from the NASA Exoplanets Research Program, award number 80NSSC22K0317. MB was supported by the Idaho Space Grant Consortium. \COM{Add your acknowledgements please :)}
 \end{acknowledgments}
 
 \software{lightkurve \citep{lightkurve:2018}, astropy \citep{astropy:2013, astropy:2018, astropy:2022},
@@ -248,7 +206,7 @@ astroquery, tesscut, matplotlib \citep{Hunter:2007}, numpy \citep{harris2020arra
 
 \section{Appendix}
 
-\bibliography{sample7}{}
+\bibliography{HATP37b_TransitTiming}{}
 \bibliographystyle{aasjournalv7}
 
 
