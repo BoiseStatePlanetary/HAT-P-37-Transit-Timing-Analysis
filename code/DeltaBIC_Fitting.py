@@ -108,6 +108,15 @@ def read_Athano_data(file_name=os.path.join(code_dir, "Athano2022_Table6.csv")):
     src_flg = np.array(["A-thano+ 2022"] * len(epochs))
     return epochs, adjusted_midtimes, mid_times_errs, src_flg
 
+def read_Wang_data(file_name=os.path.join(code_dir, "Wang2024_Table1_hatp37b.csv")):
+    data = pd.read_csv(file_name, comment='#', header=0)
+    # print(data.columns)
+    epochs = np.array(data["Epoch"].astype('int'))
+    mid_times = np.array(data["Tm"])
+    mid_times_errs = np.array(data["sigma_Tm"])
+    src_flg = np.array(["Wang+ 2024"] * len(epochs))
+    return epochs, mid_times, mid_times_errs, src_flg
+
 def read_Tess_data(file_name=os.path.join(code_dir, "tess_hatp37b_allsector_fits_constantEBper.csv")):
         data = pd.read_csv(file_name, comment='#', header=0)
         epochs = np.array(data["Epoch"].astype('int'))
@@ -150,20 +159,26 @@ def create_susie_obj():
 
     return unique_epochs, unique_midtimes, unique_errors, unique_src_flgs
 
-def create_athano_tess_bsu_susie_obj():
+
+def create_athano_tess_bsu_asu_susie_obj():
     A_epochs, A_midtimes, A_midtime_errs, A_srcs = read_Athano_data()
     tess_epochs, tess_midtimes, tess_midtime_errs, tess_srcs = read_Tess_data()
     s745_midtimes, s745_midtime_errs, s745_srcs = read_Sec7475_data()
-    
+
     data = pd.read_csv(os.path.join(code_dir, "BSU_midtimes_2025.csv"), comment='#', header=0)
     BSU_midtimes = np.array(data["Tm"])
     BSU_midtime_errs = np.array(data["sigma_Tm"])
     BSU_src_flg = np.array(data["src_flg"])
-        
 
-    rand_all_midtimes = np.concatenate((A_midtimes, tess_midtimes, s745_midtimes, BSU_midtimes))
-    rand_all_midtime_errs = np.concatenate((A_midtime_errs, tess_midtime_errs, s745_midtime_errs, BSU_midtime_errs))
-    rand_all_src_flgs = np.concatenate((A_srcs, tess_srcs, s745_srcs, BSU_src_flg))
+    asu_data = pd.read_csv(os.path.join(code_dir, "ASU_midtimes_2025.csv"), comment='#', header=0)
+    ASU_midtimes = np.array(asu_data["Tm"])
+    ASU_midtime_errs = np.array(asu_data["sigma_Tm"])
+    ASU_src_flg = np.array(asu_data["src_flg"])
+
+    rand_all_midtimes = np.concatenate((A_midtimes, tess_midtimes, s745_midtimes, BSU_midtimes, ASU_midtimes))
+    rand_all_midtime_errs = np.concatenate((A_midtime_errs, tess_midtime_errs, s745_midtime_errs,
+                                            BSU_midtime_errs, ASU_midtime_errs))
+    rand_all_src_flgs = np.concatenate((A_srcs, tess_srcs, s745_srcs, BSU_src_flg, ASU_src_flg))
 
     # return ALL SORTED values
     sort_idx = np.argsort(rand_all_midtimes)
@@ -172,22 +187,15 @@ def create_athano_tess_bsu_susie_obj():
     all_midtime_errs = rand_all_midtime_errs[sort_idx]
     all_src_flgs = rand_all_src_flgs[sort_idx]
 
-    # delte duplicates, first attempt - keep first value
-    e, u_inds = np.unique(all_epochs, return_index=True)
-    unique_epochs = all_epochs[u_inds]
-    unique_midtimes = all_midtimes[u_inds]
-    unique_errors = all_midtime_errs[u_inds]
-    unique_src_flgs = all_src_flgs[u_inds]
+    timing_obj = TimingData(time_format="jd", epochs=all_epochs, mid_times=all_midtimes,
+                            mid_time_uncertainties=all_midtime_errs, time_scale="tdb")
 
-    timing_obj = TimingData(time_format="jd", epochs=unique_epochs, mid_times=unique_midtimes, 
-                                     mid_time_uncertainties=unique_errors, time_scale="tdb")  
-                                    #  object_ra=284.2960393, object_dec=51.2691212)
     ephemeris_obj = Ephemeris(timing_obj)
 
-    return unique_src_flgs, ephemeris_obj
+    return all_src_flgs, ephemeris_obj, timing_obj
 
 def create_colormap(src_flgs):
-    cm = plt.get_cmap('managua')
+    cm = plt.get_cmap('jet')
     num_colors = len(src_flgs)
     inds = range(num_colors)
     cNorm  = colors.Normalize(vmin=0, vmax=num_colors-1)
@@ -196,6 +204,12 @@ def create_colormap(src_flgs):
     color_dict = {}
     for i in inds:
         color_dict[src_flgs[i]] = scalarMap.to_rgba(i)
+    color_dict["A-thano+ 2022"] = 'k'
+    color_dict["Wang+ 2022"] = 'grey'
+    color_dict["SuPerPiG"] = 'fuchsia'
+    color_dict["Unistellar"] = 'orange'
+    color_dict["MicroObservatory(ASU)"] = 'maroon'
+    color_dict["Bruneau"] = 'g'
 
     return color_dict  
 
@@ -208,9 +222,6 @@ def plot_lin_BIC(src_flgs, ephemeris_obj):
     # print(src_flgs[bad_inds])
 
     color_dict = create_colormap(np.unique(src_flgs))
-    color_dict["A-thano+ 2022"] = 'k'
-    color_dict["Unistellar"] = 'fuchsia'
-    color_dict["Bruneau"] = 'r'
 
     for data_point, time, src in zip(epochs, oc_vals, src_flgs):
         ax.scatter(data_point, time, label=src, color=color_dict[src], zorder=110)
@@ -319,7 +330,7 @@ def plot_omni_precession(Epochs, Tms, sigma_Tms, src_flgs):
     # O - C using best-fit linear portion of precession model
     oc_vals = (Tms - linear_Tms)*24*60  # convert to minutes
     color_dict = create_colormap(np.unique(src_flgs))
-    for data_point, time, sigma, src in zip(epochs, oc_vals, sigma_Tms, src_flgs):
+    for data_point, time, sigma, src in zip(Epochs, oc_vals, sigma_Tms, src_flgs):
         ax1.errorbar(data_point, time, yerr=sigma*24*60, color='k')
         ax1.scatter(data_point, time, label=src, color=color_dict[src], zorder=110)
     
@@ -426,15 +437,14 @@ def plot_omni_precession(Epochs, Tms, sigma_Tms, src_flgs):
     # ax3.set_ylim([-0.5, 0.25])
 
     plt.tight_layout()
-    # plt.show()
+    plt.show()
     # fig.savefig("../figures/OmniPlot_HAT-P-37b_Precession.jpg", dpi=300, bbox_inches="tight")
 
 
 if __name__ == "__main__":
-    flags, obj = create_athano_tess_bsu_susie_obj()
-    plot_lin_BIC(flags, obj)
-
-    # print(get_epochs(2460313.8743))
-    # epochs, midtimes, midtime_errs, srcs = read_Athano_data()
-    # plot_omni_precession(epochs, midtimes, midtime_errs, srcs)
+    flags, obj, timing_obj = create_athano_tess_bsu_asu_susie_obj()
+    # flags, obj, timing_obj = create_susie_obj()
+    # plot_lin_BIC(flags, obj)
+    plot_omni_precession(timing_obj.epochs, timing_obj.mid_times,
+                         timing_obj.mid_time_uncertainties, flags)
 
